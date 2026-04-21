@@ -87,7 +87,7 @@ int main(void)
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
@@ -101,18 +101,19 @@ int main(void)
     ClientSocket = accept(ListenSocket, NULL, NULL);
     closesocket(ListenSocket);
 
-    // Server Socket
+    // Server Socket setup for IPv6 use AF_INET for IPv4
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    iResult = getaddrinfo("127.0.0.1", "15000", &hints, &result);
+    iResult = getaddrinfo("::1", "15000", &hints, &result);
     ServerSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     iResult = connect(ServerSocket, result->ai_addr, (int)result->ai_addrlen);
     freeaddrinfo(result);
 
-    setsockopt(ServerSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+    int no = 0;
+    setsockopt(ListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&no, sizeof(no));
 
     do {
         iResult = recv(ClientSocket, (char*)recvbuf, recvbuflen, 0);
